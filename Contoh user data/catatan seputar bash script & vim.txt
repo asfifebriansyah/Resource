@@ -32,3 +32,15 @@ keterangan: - s = substitusi(ganti)
 	    - teks_baru = teks pengganti
 	    - g = ganti semua kemunculan dalam satu baris(tanpa g, hanya mengganti kemunculan pertama)
 
+# membuat file / menambahkan baris baru pada file menggunakan echo
+
+echo " <teks> " > /path/to/file/file.txt
+
+echo " <teks> " >> /path/to/file/file.txt
+
+keterangan :
+	echo		= memanggil perintah echo
+	"<teks>"	= teks yang akan diisi kedalam file
+	' > '		= membuat file baru/menghapus seluruh teks yang ada didalam file lalu menggantinya dengan teks yang diinput
+	' >> '		= menambahkan baris teks baru pada line bagian paling bawah dari file
+	/path/file.txt	= path dari file yang akan diubah atau dibuat
