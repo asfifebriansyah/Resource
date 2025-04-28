@@ -1,0 +1,158 @@
+Latihan final project Aguna
+
+Alur project:
+public -> route53 -> lb -> tg -> instance ASG -> s3 & rds
+
+Alur pembuatan:
+buat vpc -> s3 & rds untuk database -> buat user -> konfigurasi ec2, django, uwsgi, nginx -> buat lt -> tg -> lb -> asg -> done
+
+user data:
+#!/bin/bash
+sudo yum install -y git gcc mysql-devel python3-devel
+cd /home/ec2-user/
+sudo -u ec2-user git clone https://github.com/ArRosid/teman_kelas.git
+cd teman_kelas
+pip3 install virtualenv
+virtualenv -p python3 venv
+source venv/bin/activate
+pip3 install -r requirements.txt
+echo "AWS_ACCESS_KEY_ID=AKIATQZCSQQOZJXFI54O
+AWS_SECRET_ACCESS_KEY=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
+AWS_STORAGE_BUCKET_NAME=teman-kelas-bucket
+DATABASE_NAME=teman_kelas
+DATABASE_USER=admin
+DATABASE_PASSWORD=asfi1111
+DATABASE_HOST=database-aguna.chuguimwk3xy.us-east-1.rds.amazonaws.com
+SECRET_KEY=sembarangSembarang987654321" > teman_kelas/.env
+python manage.py migrate
+sudo amazon-linux-extras enable nginx1
+sudo yum clean metadata
+sudo yum install -y nginx
+echo "upstream teman_kelas {
+    server unix:///run/uwsgi/teman_kelas.sock;
+}
+
+server {
+    listen	80;
+    charset     utf-8;
+
+    location = /favicon.ico { access_log off; log_not_found off; }
+    location /static/ {
+        alias /usr/share/nginx/html/static/;
+    }
+
+    location / {
+        uwsgi_pass  teman_kelas;
+        include     /etc/nginx/uwsgi_params;
+    }
+}" > /etc/nginx/conf.d/final-project.conf
+sudo cp static /usr/share/nginx/html/ -rf
+sudo systemctl restart nginx
+sudo systemctl enable nginx
+pip install uwsgi
+sudo mkdir /run/uwsgi/
+sudo chown ec2-user:ec2-user /run/uwsgi/
+sudo mkdir -p /etc/uwsgi/sites
+echo "[uwsgi]
+chdir = /home/ec2-user/teman_kelas/
+module = teman_kelas.wsgi
+home = /home/ec2-user/teman_kelas/venv/
+master = true
+process = 10
+socket = /run/uwsgi/teman_kelas.sock
+chmod-socket = 666
+vacuum = true" > /etc/uwsgi/sites/teman_kelas.ini
+echo "[Unit]
+Description=Teman Kelas Emperor service
+
+[Service]
+ExecStartPre=/bin/bash -c 'mkdir -p /run/uwsgi; chown ec2-user:ec2-user /run/uwsgi'
+ExecStart=/home/ec2-user/teman_kelas/venv/bin/uwsgi --emperor /etc/uwsgi/sites
+Restart=always
+KillSignal=SIGQUIT
+Type=notify
+NotifyAccess=all
+
+[Install]
+WantedBy=multi-user.target" > /etc/systemd/system/teman_kelas.service
+sudo systemctl start teman_kelas
+sudo systemctl enable teman_kelas
+
+debug userdata:
+#!/bin/bash
+exec > >(tee /var/log/user-data.log|logger -t user-data -s 2>/dev/console) 2>&1
+INSTANCE_ID=$(curl -s http://169.254.169.254/latest/meta-data/instance-id)
+echo "User Data Started on Instance: $INSTANCE_ID" > /var/www/html/debug.txt
+sudo yum install -y git gcc mysql-devel python3-devel
+cd /home/ec2-user/
+sudo -u ec2-user git clone https://github.com/ArRosid/teman_kelas.git
+cd teman_kelas
+pip3 install virtualenv
+virtualenv -p python3 venv
+source venv/bin/activate
+pip3 install -r requirements.txt
+echo "AWS_ACCESS_KEY_ID=AKIATQZCSQQOZJXFI54O
+AWS_SECRET_ACCESS_KEY=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
+AWS_STORAGE_BUCKET_NAME=teman-kelas-bucket
+DATABASE_NAME=teman_kelas
+DATABASE_USER=admin
+DATABASE_PASSWORD=asfi1111
+DATABASE_HOST=database-aguna.chuguimwk3xy.us-east-1.rds.amazonaws.com
+SECRET_KEY=sembarangSembarang987654321" > teman_kelas/.env
+python manage.py migrate
+sudo amazon-linux-extras enable nginx1
+sudo yum clean metadata
+sudo yum install -y nginx
+echo "upstream teman_kelas {
+    server unix:///run/uwsgi/teman_kelas.sock;
+}
+
+server {
+    listen	80;
+    charset     utf-8;
+
+    location = /favicon.ico { access_log off; log_not_found off; }
+    location /static/ {
+        alias /usr/share/nginx/html/static/;
+    }
+
+    location / {
+        uwsgi_pass  teman_kelas;
+        include     /etc/nginx/uwsgi_params;
+    }
+}" > /etc/nginx/conf.d/final-project.conf
+sudo cp static /usr/share/nginx/html/ -rf
+sudo systemctl restart nginx
+sudo systemctl enable nginx
+pip install uwsgi
+sudo mkdir /run/uwsgi/
+sudo chown ec2-user:ec2-user /run/uwsgi/
+sudo mkdir -p /etc/uwsgi/sites
+echo "[uwsgi]
+chdir = /home/ec2-user/teman_kelas/
+module = teman_kelas.wsgi
+home = /home/ec2-user/teman_kelas/venv/
+master = true
+process = 10
+socket = /run/uwsgi/teman_kelas.sock
+chmod-socket = 666
+vacuum = true" > /etc/uwsgi/sites/teman_kelas.ini
+echo "[Unit]
+Description=Teman Kelas Emperor service
+
+[Service]
+ExecStartPre=/bin/bash -c 'mkdir -p /run/uwsgi; chown ec2-user:ec2-user /run/uwsgi'
+ExecStart=/home/ec2-user/teman_kelas/venv/bin/uwsgi --emperor /etc/uwsgi/sites
+Restart=always
+KillSignal=SIGQUIT
+Type=notify
+NotifyAccess=all
+
+[Install]
+WantedBy=multi-user.target" > /etc/systemd/system/teman_kelas.service
+sudo systemctl start teman_kelas
+sudo systemctl enable teman_kelas
+curl -s http://localhost > /var/www/html/curl-output.txt || echo "Curl failed" >> /var/www/html/debug.txt
+sudo netstat -tuln | grep ':80' >> /var/www/html/netstat.txt
+sleep 30
+echo "User Data Completed" >> /var/www/html/debug.txt

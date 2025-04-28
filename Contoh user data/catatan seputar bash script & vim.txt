@@ -1,0 +1,34 @@
+catatan seputar bash script & vim
+
+Vim
+
+mencari teks:
+masuk mode biasa(esc) > /teks_yang_dicari
+
+/teks1
+
+n -> lompat ke hasil selanjutnya
+N -> lompat ke hasil sebelumnya
+
+
+bash script
+
+# menjalankan perintah menggunakan user tertentu:
+menjalankan perintah ls menggunakan user biasa
+sudo -u <username> <perintah>
+sudo -u ec2-user ls /home/ec2-user
+
+menggunakan su:
+su - username -c "perintah"
+su - ec2-user -c "ls /home/ec-2user"
+
+# replace teks
+menggunakan sed(stream editor) mengganti dan menyimpan ke file yang sama
+
+#!/bin/bash
+sed -i 's/teks_lama/teks_baru/g' contoh.txt
+keterangan: - s = substitusi(ganti)
+	    - teks_lama = teks yang ingin diganti
+	    - teks_baru = teks pengganti
+	    - g = ganti semua kemunculan dalam satu baris(tanpa g, hanya mengganti kemunculan pertama)
+

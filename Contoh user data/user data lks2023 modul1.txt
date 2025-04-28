@@ -1,0 +1,67 @@
+user data lks2023 modul1
+
+mqtt:
+
+#!/bin/bash
+amazon-linux-extras install epel
+yum install -y mosquitto
+systemctl enable mosquitto 
+systemctl start mosquitto
+touch /etc/mosquitto/passwd
+echo "allow_anonymous false
+password_file /etc/mosquitto/passwd" /etc/mosquitto/mosquitto.conf
+systemctl restart mosquitto
+mosquitto_passwd -b /etc/mosquitto/passwd asfi Lksjatim2023
+
+nodered:
+
+#!/bin/bash
+yum install -y nodejs
+npm install -g --unsafe-perm node-red
+yum install -y git
+
+echo "[Unit]
+Description=Node-Red
+After=network.target
+
+[Service]
+ExecStart=/usr/bin/node /usr/local/bin/node-red
+Restart=always
+User=ec2-user
+WorkingDirectory=/home/ec2-user
+
+[Install]
+WantedBy=multi-user.target" > /etc/systemd/system/node-red.service
+
+systemctl daemon-reload
+systemctl enable node-red
+systemctl start node-red
+
+# datalog
+
+yum install -y python3 python3-pip cronie
+pip3 install paho-mqtt boto3
+pip3 install python-dotenv
+systemctl enable crond
+systemctl start crond
+cd /home/ec2-user/
+git clone https://github.com/handipradana/lksprov.git
+cd lksprov
+
+echo "MQTT_BROKER=54.165.15.8
+MQTT_PORT=1883
+MQTT_TOPIC=rumah/dht22
+AWS_ACCESS_KEY=ASIATQZCSQQOYYZ2ZD7V
+AWS_SECRET_KEY=C8QcHpVtg1LVE7rSO7y47LyPesOz0/38p6Qv3UWd
+AWS_SESSION_TOKEN=IQoJb3JpZ2luX2VjEP///////////wEaCXVzLWVhc3QtMSJHMEUCIQDn/VpIvdLhMDMtjMb83htYAw4LS1LKgBxZ8E/nICgVHgIgCwTcZq7gc2T1O5Cqxahf631r2N/hq01n726vC1qWn+4q6wEIKBAAGgwyNDIyMDEyOTc5NDkiDHeovncqYlv5df1hIyrIAVI4XaD3U2UxxCQbZUVooAKz9ZAnjx3lVbAvyebGsdkxz/zDB8wpRF+LlkkIqFeal2TLHD2nZZ+YL9jwMWdal6NDauZ2n3/gIfxR1IvEfKgxvkWSsfEocj5GEnoIBwlFtfvghvHdYaIRYIywODLkmNivE0J5qjTWgGnwwTjwsMHf7i59KDqmVJIe9Hv3lH8CZmjzkGpY61CiD79WYftEKgTkfUspR9T0pj8LQ+wZUst7+k9VZ9hUXorFuMOJjRFfbzKm3UNZKOa+MPbCu70GOpgB8WVhXRBjzTsa8MeK6hMSfPGyrZpGGVSOgZqVTC/ZlF0/SzBodYvlGEtvuoK3nyO1XDtr30ENN7uMyoihd8cWbnJbhHw1CethSnHrIhAC9e8almiX8wbS2wyCOcEBxObzvwsBPsRcTCRUNppCN8jNpWdB4WgLvlIQlpXeEcrC0Wy8HCPu2d8vrn6QZlysxGPJH969LiOS/58=
+S3_BUCKET=bucketlks-02
+S3_REGION=us-east-1
+DYNAMODB_TABLE=dynamodb_02
+DYNAMODB_REGION=us-east-1
+MQTT_USERNAME=asfi
+MQTT_PASSWORD=Lksjatim2023" > /home/ec2-user/lksprov/.env
+
+chmod +x /home/ec2-user/lksprov/codepy.py
+chown ec2-user:ec2-user /home/ec2-user/lksprov/codepy.py
+echo "*/5 * * * * /use/bin/python3 /home/ec2-user/lksprov/codepy.py" | crontab -u ec2-user -
+systemctl start crond
